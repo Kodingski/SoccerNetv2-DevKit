@@ -139,3 +139,5 @@ Task1-ActionSpotting/CALF_Calibration_GCN/log/
 Task1-ActionSpotting/CALF_Calibration_GCN/models/
 Task1-ActionSpotting/CALF_Calibration_GCN/dcgm/
 Task1-ActionSpotting/CALF_Calibration_GCN/outputs/
+*.mp4
+*.mov
