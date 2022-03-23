@@ -68,6 +68,8 @@ class SoccerNetClips(Dataset):
         self.game_feats = list()
         self.game_labels = list()
 
+
+        ###Transformation of json to labels happens here!!
         # game_counter = 0
         for game in tqdm(self.listGames):
             # Load features
