@@ -11,7 +11,7 @@ from SoccerNet.Downloader import SoccerNetDownloader
 
 
 #%%initialize downloader and get features
-path = ''
-
+path = 'data'
+mySoccerNetDownloader=SoccerNetDownloader(LocalDirectory=path)
 
 mySoccerNetDownloader.downloadGames(files=["Labels-v2.json"], split=["train","valid","test"])

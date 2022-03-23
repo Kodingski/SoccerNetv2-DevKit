@@ -10,6 +10,9 @@ import torch.nn.functional as F
 
 from netvlad import NetVLAD, NetRVLAD
 
+#####This creates the model, I think here I could adjust frametare (to 10), 
+#####num_classes (to 3), T (to 2.5s)
+
 
 class Model(nn.Module):
     def __init__(self, weights=None, input_size=512, num_classes=17, vocab_size=64, window_size=15, framerate=2, pool="NetVLAD"):
