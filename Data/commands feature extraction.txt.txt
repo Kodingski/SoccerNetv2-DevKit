@@ -1,0 +1,1 @@
+python Features/VideoFeatureExtractor.py --path_video Data/SF_02ST_SGE_FCA_mov.mov --path_features Data/Features.npy --overwrite --PCA "Features/pca_512_TF2.pkl" --PCA_scaler "Features/average_512_TF2.pkl" --FPS 10
