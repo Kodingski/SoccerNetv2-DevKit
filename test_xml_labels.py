@@ -10,6 +10,7 @@ Created on Wed Mar 23 16:29:07 2022
 #%% imports
 
 import json
+import moviepy.editor as mp
 import xml.etree.ElementTree as ET
 
 from xml.dom import minidom
@@ -26,6 +27,10 @@ tree = ET.parse('Data/DFL-MAT-003CPF_full_video_labels_uniform_setpieces_2.5_0.4
 events_dict = {}
 events_dict["annotations"] = []
 
+#%%load video data and initiate clip list
+video = mp.VideoFileClip("Data/SF_02ST_SGE_FCA.mp4")
+video.resize( (398,224) )
+clips = []
 
 #%%
 ##find all events (instances) in the xml
@@ -39,6 +44,8 @@ event_counter = 0
 #add info about event in dictionaries similar to the style of NetVlad ++ 
 for event in lst:
     
+    if event_counter % 100 == 0:
+        print(event_counter)
     event_dict = {}
 
     event_dict["start_raw"] = event.find('start').text
@@ -52,7 +59,17 @@ for event in lst:
     event_counter += 1
     events_dict["annotations"].append(event_dict)
     
+    clip = video.subclip(float(event_dict["start_raw"]), float(event_dict["end_raw"]))
+    clips.append(clip)
     
+final_clip = mp.concatenate_videoclips(clips)
+
+
+
+#%%
+final_clip.write_videofile(filename = "Data/SGE_FCA_snippets.mp4", 
+                               audio = False, threads = 8)
+
 
 
 
