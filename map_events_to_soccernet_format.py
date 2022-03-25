@@ -19,7 +19,7 @@ tree = ET.parse('Data/DFL-MAT-003CPF_full_video_labels_uniform_setpieces_2.5_0.4
 ##       For now focus on one match and reproduce their annotations
 
 
-#%%make dictionary to later transform into .json
+#%%make dictionary to later transform into .json (using similar format as Soccernet)
 events_dict = {}
 events_dict["annotations"] = []
 
@@ -50,7 +50,7 @@ for event in lst:
     
     
 
-    #initialiaze timesteps of actual events 
+    #initialiaze timesteps of actual events as none for the case none happened 
     event_dict['timestep_raw'] = None
     event_dict['timestep'] = None
 
@@ -63,16 +63,11 @@ for event in lst:
             event_dict['timestep_raw'] = label.find('text').text
             event_dict['timestep'] = starting_time + (float(event_dict['timestep_raw']) - float(event_dict["start_raw"])) 
     
-            
-
-
-    
     event_dict["type"] = event.find("code").text
-    
-
-    
-    
     
     event_counter += 1
     events_dict["annotations"].append(event_dict)
-    
+
+#%%save dict to json    
+with open("Data/SGE_FCA_annotations_snippets.json", "w") as outfile:
+    json.dump(events_dict, outfile)
