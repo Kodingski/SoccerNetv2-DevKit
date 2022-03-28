@@ -15,8 +15,10 @@ import json
 
 from SoccerNet.Downloader import getListGames
 from SoccerNet.Downloader import SoccerNetDownloader
-from SoccerNet.Evaluation.utils import AverageMeter, EVENT_DICTIONARY_V2, INVERSE_EVENT_DICTIONARY_V2
+from SoccerNet.Evaluation.utils import AverageMeter, EVENT_DICTIONARY_SPORTEC, INVERSE_EVENT_DICTIONARY_SPORTEC
 from SoccerNet.Evaluation.utils import EVENT_DICTIONARY_V1, INVERSE_EVENT_DICTIONARY_V1
+
+
 
 
 
@@ -54,7 +56,7 @@ class SoccerNetClips(Dataset):
             self.num_classes = 3
             self.labels="Labels.json"
         elif version == 2:
-            self.dict_event = EVENT_DICTIONARY_V2
+            self.dict_event = EVENT_DICTIONARY_SPORTEC
             self.num_classes = 17
             self.labels="Labels-v2.json"
 
@@ -165,7 +167,7 @@ class SoccerNetClipsTesting(Dataset):
             self.num_classes = 3
             self.labels="Labels.json"
         elif version == 2:
-            self.dict_event = EVENT_DICTIONARY_V2
+            self.dict_event = EVENT_DICTIONARY_SPORTEC
             self.num_classes = 17
             self.labels="Labels-v2.json"
 
