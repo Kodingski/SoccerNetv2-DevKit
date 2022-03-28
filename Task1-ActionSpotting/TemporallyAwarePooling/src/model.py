@@ -15,7 +15,7 @@ from netvlad import NetVLAD, NetRVLAD
 
 
 class Model(nn.Module):
-    def __init__(self, weights=None, input_size=512, num_classes=17, vocab_size=64, window_size=15, framerate=2, pool="NetVLAD"):
+    def __init__(self, weights=None, input_size=512, num_classes=3, vocab_size=64, window_size=2.5, framerate=2, pool="NetVLAD"):
         """
         INPUT: a Tensor of shape (batch_size,window_size,feature_size)
         OUTPUTS: a Tensor of shape (batch_size,num_classes+1)
@@ -135,8 +135,10 @@ class Model(nn.Module):
 
 
 if __name__ == "__main__":
+    
     BS =256
-    T = 15
+    #adjust to our data
+    T = 2.5
     framerate= 2
     D = 512
     pool = "NetRVLAD++"
