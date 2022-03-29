@@ -6,7 +6,7 @@ Created on Fri Mar 25 12:02:03 2022
 """
 
 import json
-import moviepy.editor as mp
+#import moviepy.editor as mp
 import xml.etree.ElementTree as ET
 
 from xml.dom import minidom
@@ -48,6 +48,7 @@ for event in lst:
     event_dict["start"] = starting_time
     event_dict["end"] = starting_time + 2.5
     
+    event_dict["event_attributes"] = []
     
 
     #initialiaze timesteps of actual events as none for the case none happened 
@@ -59,14 +60,31 @@ for event in lst:
     labels = event.findall("label")
     for label in labels:
         if label.find("group").text == 'Event_Timestamp':
-            print(label.find('text').text)
+            #print(label.find('text').text)
             event_dict['timestep_raw'] = label.find('text').text
             event_dict['timestep'] = starting_time + (float(event_dict['timestep_raw']) - float(event_dict["start_raw"])) 
+        
+        if label.find("group").text in ["tackle_WinnerResult", 
+                                           "Event_SubType"] :
+            event_dict["event_attributes"].append(label.find('text').text)
+           
+    event_type = event.find("code").text 
     
-    event_dict["type"] = event.find("code").text
     
+    if event_type == "Play":
+        event_dict["event_attributes"].append("Open")
+    
+    if event_type in ['Freekick', 'Corner']:
+        print('here')
+        event_dict["event_attributes"].append(event_type)
+        event_type = 'Play'        
+
+    event_dict["type"] = event_type
+
     event_counter += 1
     events_dict["annotations"].append(event_dict)
+
+#%%
 
 #%%save dict to json    
 with open("Data/SGE_FCA_annotations_snippets.json", "w") as outfile:

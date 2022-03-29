@@ -44,6 +44,118 @@ def feats2clip(feats, stride, clip_length, padding = "replicate_last", off=0):
     return feats[idx,...]
 
 
+
+class SoccerNetClipsSportec(Dataset):
+    def __init__(self, path, features="ResNET_PCA512.npy", split=["train"], version=2, 
+                framerate=2, window_size=15):
+        self.path = path
+        #self.listGames = getListGames(split)
+        self.features = features
+        self.window_size_frame = window_size*framerate
+        self.version = version
+        if version == 1:
+            self.num_classes = 3
+            self.labels="Labels.json"
+        elif version == 2:
+            self.dict_event = EVENT_DICTIONARY_SPORTEC
+            self.num_classes = 17
+            self.labels="Labels-v2.json"
+
+        #logging.info("Checking/Download features and labels locally")
+        #downloader = SoccerNetDownloader(path)
+        #downloader.downloadGames(files=[self.labels, f"1_{self.features}", f"2_{self.features}"], split=split, verbose=False,randomized=True)
+
+
+        logging.info("Pre-compute clips")
+
+        self.game_feats = list()
+        self.game_labels = list()
+
+
+        ###Transformation of json to labels happens here!!
+        # game_counter = 0
+        #for game in tqdm(self.listGames):
+            # Load features
+        feat_game = np.load(os.path.join(self.path, game, "1_" + self.features))
+        feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
+        #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
+        #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
+
+        feat_game = feats2clip(torch.from_numpy(feat_game), stride=self.window_size_frame, clip_length=self.window_size_frame)
+        #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
+
+        # Load labels
+        labels = json.load(open(os.path.join(self.path, game, self.labels)))
+
+        label_half1 = np.zeros((feat_game.shape[0], self.num_classes+1))
+        #label_half1[:,0]=1 # those are BG classes
+        #label_half2 = np.zeros((feat_half2.shape[0], self.num_classes+1))
+        #label_half2[:,0]=1 # those are BG classes
+
+
+        for annotation in labels["annotations"]:
+
+            time = annotation["gameTime"]
+            event = annotation["label"]
+
+            half = int(time[0])
+
+            minutes = int(time[-5:-3])
+            seconds = int(time[-2::])
+            frame = framerate * ( seconds + 60 * minutes ) 
+
+            if version == 1:
+                if "card" in event: label = 0
+                elif "subs" in event: label = 1
+                elif "soccer" in event: label = 2
+                else: continue
+            elif version == 2:
+                if event not in self.dict_event:
+                    continue
+                label = self.dict_event[event]
+
+            # if label outside temporal of view
+            if half == 1 and frame//self.window_size_frame>=label_half1.shape[0]:
+                continue
+            if half == 2 and frame//self.window_size_frame>=label_half2.shape[0]:
+                continue
+
+            if half == 1:
+                label_half1[frame//self.window_size_frame][0] = 0 # not BG anymore
+                label_half1[frame//self.window_size_frame][label+1] = 1 # that's my class
+
+            if half == 2:
+                label_half2[frame//self.window_size_frame][0] = 0 # not BG anymore
+                label_half2[frame//self.window_size_frame][label+1] = 1 # that's my class
+        
+        self.game_feats.append(feat_game)
+        #self.game_feats.append(feat_half2)
+        self.game_labels.append(label_game)
+        #self.game_labels.append(label_half2)
+
+        self.game_feats = np.concatenate(self.game_feats)
+        self.game_labels = np.concatenate(self.game_labels)
+
+
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+        Returns:
+            clip_feat (np.array): clip of features.
+            clip_labels (np.array): clip of labels for the segmentation.
+            clip_targets (np.array): clip of targets for the spotting.
+        """
+        return self.game_feats[index,:,:], self.game_labels[index,:]
+
+    def __len__(self):
+        return len(self.game_feats)
+
+
+
+
+
 class SoccerNetClips(Dataset):
     def __init__(self, path, features="ResNET_PCA512.npy", split=["train"], version=1, 
                 framerate=2, window_size=15):
