@@ -78,8 +78,8 @@ feat_soccernet_head = feat_soccernet[0:100,:]
 #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
 #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
 
-feat_game = feats2clip(torch.from_numpy(feat_game), stride=window_size_frame, clip_length=window_size_frame)
-feat_soccernet_torch = feats2clip(torch.from_numpy(feat_soccernet), stride=window_size_frame_soccernet, clip_length=window_size_frame_soccernet)
+feat_game_sts = feats2clip(torch.from_numpy(feat_game), stride=window_size_frame, clip_length=window_size_frame)
+#feat_soccernet_torch = feats2clip(torch.from_numpy(feat_soccernet), stride=window_size_frame_soccernet, clip_length=window_size_frame_soccernet)
 
 
 #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
@@ -144,10 +144,27 @@ game_labels.append(label_half2)
 game_labels = np.concatenate(game_labels)
 
 #%%load sportec lables
-labels = json.load(open(r'Data/SGE_FCA_annotations_snippets.json'))
+labels_sts = json.load(open(r'Data/SGE_FCA_annotations_snippets.json'))
 
 
 ##next: Recreate their one hot encoding on sportec data
+dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
+
+num_classes = len(dict_event_sts)
+game_labels = np.zeros((len(labels_sts['annotations']), num_classes))
+
+
+for annotation in labels_sts["annotations"]:
+
+    snippet_id = annotation['id']
+    end_time = annotation["end"]
+    event_timestamp = annotation["timestep"]
+    frame = framerate * ( seconds + 60 * minutes ) 
+    
+    event_type = annotation['type']
+    label = dict_event_sts[event_type]
+
+    game_labels[snippet_id,label] = 1 # that's my class
 
 
 #%%do it with sportec labels

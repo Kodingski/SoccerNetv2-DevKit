@@ -5,14 +5,29 @@ Created on Mon Mar 28 11:37:46 2022
 @author: timsc
 """
 
+##todo: add gametime variable
+##change names of tackling game attributes
 
 #%%imports
 import xml.etree.ElementTree as ET
 import pandas as pd
 #%%load
 # parse an xml file by name
-tree = ET.parse('Data/DFL-MAT-003CPF_full_video_labels_uniform_setpieces_2.5_0.4_1.0_214.5_4074.45.xml')
+tree = ET.parse(r'final-snippets/xml/DFL-MAT-003CPG_188.95_4046.95_final_snippets.xml')
 lst = tree.findall('ALL_INSTANCES/instance')
+
+kickoff_ht1 = 188.95
+kickoff_ht2 = 4046.95
+
+#%%dictionary to remap challenge definitions to catalogue
+remap_challenges = {'dribbledAround' : 'opponent_rounded',
+  'layoff': 'challenge_during_ball_transfer',
+  'ballClaimed': 'opponent_dispossessed',
+  'ballControlRetained':'possession_retained',
+   'ballcontactSucceeded':'ball_action_forced',
+   'fouled' : 'fouled' }
+
+
 
 #%%
 #make dictionary to later transform into .csv
@@ -53,15 +68,28 @@ for event in lst:
             event_dict['event_timestamp'] = label.find('text').text
             #event_dict['timestep'] = starting_time + (float(event_dict['timestep_raw']) - float(event_dict["start_raw"])) 
         
-        if label.find("group").text in ["tackle_WinnerResult", 
-                                           "Event_SubType"] :
+        if label.find("group").text == "Event_SubType" :
             event_dict["event_attributes"].append(label.find('text').text)
+            
+        if label.find("group").text  == 'tackle_WinnerResult':
+            event_dict["event_attributes"].append(remap_challenges[label.find('text').text])
            
     event_type = event.find("code").text 
-    
+    if event_type == 'TacklingGame':
+        event_type = 'Challenge'
+    #add gametime timestamp
+    if float(event_dict["start_time_snippet"]) < kickoff_ht2:
+        event_dict['halftime'] = 1
+        event_dict['start_time_snippet_halftime'] = float(event_dict['start_time_snippet']) - kickoff_ht1
+        
+        #event_dict['timestamp_halftime'] = float(event_dict['event_timestamp']) - kickoff_ht1
+    else:
+        event_dict['halftime'] = 2
+        #event_dict['timestamp_halftime'] = float(event_dict['event_timestamp']) - kickoff_ht2  
+        event_dict['start_time_snippet_halftime'] = float(event_dict['start_time_snippet']) - kickoff_ht2
     
     if event_type == "Play":
-        event_dict["event_attributes"].append("Open")
+        event_dict["event_attributes"].append("OpenPlay")
     
     if event_type in ['Freekick', 'Corner']:
         event_dict["event_attributes"].append(event_type)
@@ -80,7 +108,8 @@ for event in lst:
 df = pd.DataFrame.from_dict(data=events_dict, orient='index')
 df = (df[['event_type', 'event_attributes', 
          'start_time_snippet', 'end_time_snippet',
-         'event_timestamp']])
+         'event_timestamp', 'halftime', 'start_time_snippet_halftime']])
 
-df.to_csv('Data/labels_kaggle.csv', header=True)
+df.to_csv('final-snippets/csv/DFL-MAT-003CPG_188.95_4046.95_final_snippets.csv', header=True)
 
+#
