@@ -7,7 +7,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import torch
 
-from dataset import SoccerNetClips, SoccerNetClipsTesting #,SoccerNetClipsOld
+from dataset import SoccerNetClips, SoccerNetClipsTesting, SoccerNetClipsSportec #,SoccerNetClipsOld
 from model import Model
 from train import trainer, test, testSpotting
 from loss import NLLLoss
@@ -21,10 +21,10 @@ def main(args):
 
     # create dataset
     if not args.test_only:
-        dataset_Train = SoccerNetClips(path=args.SoccerNet_path, features=args.features, split=args.split_train, version=args.version, framerate=args.framerate, window_size=args.window_size)
-        dataset_Valid = SoccerNetClips(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
-        dataset_Valid_metric  = SoccerNetClips(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
-    dataset_Test  = SoccerNetClipsTesting(path=args.SoccerNet_path, features=args.features, split=args.split_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Train = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_train, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Valid = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Valid_metric  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
+    dataset_Test  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
 
     if args.feature_dim is None:
         args.feature_dim = dataset_Test[0][1].shape[-1]

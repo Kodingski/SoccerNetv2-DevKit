@@ -19,9 +19,6 @@ from SoccerNet.Evaluation.utils import AverageMeter, EVENT_DICTIONARY_SPORTEC, I
 from SoccerNet.Evaluation.utils import EVENT_DICTIONARY_V1, INVERSE_EVENT_DICTIONARY_V1
 
 
-
-
-
 def feats2clip(feats, stride, clip_length, padding = "replicate_last", off=0):
     if padding =="zeropad":
         print("beforepadding", feats.shape)
@@ -70,14 +67,14 @@ class SoccerNetClipsSportec(Dataset):
 
         self.game_feats = list()
         self.game_labels = list()
-
-
+        self.feat_name = 'features_snippets.npy'
+        self.label_name = 'SGE_FCA_annotations_snippets.json'
         ###Transformation of json to labels happens here!!
         # game_counter = 0
         #for game in tqdm(self.listGames):
             # Load features
-        feat_game = np.load(os.path.join(self.path, game, "1_" + self.features))
-        feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
+        feat_game = np.load(os.path.join(self.path, self.game_name))
+        #feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
         #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
         #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
 
@@ -85,48 +82,38 @@ class SoccerNetClipsSportec(Dataset):
         #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
 
         # Load labels
-        labels = json.load(open(os.path.join(self.path, game, self.labels)))
+        labels = json.load(open(os.path.join(self.path,self.label_name)))
+            
+        dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
+        
+        
+        total_snippets = len(labels['annotations'])
+        game_labels = np.zeros((total_snippets, num_classes))
 
-        label_half1 = np.zeros((feat_game.shape[0], self.num_classes+1))
-        #label_half1[:,0]=1 # those are BG classes
-        #label_half2 = np.zeros((feat_half2.shape[0], self.num_classes+1))
-        #label_half2[:,0]=1 # those are BG classes
-
-
-        for annotation in labels["annotations"]:
-
-            time = annotation["gameTime"]
-            event = annotation["label"]
-
-            half = int(time[0])
-
-            minutes = int(time[-5:-3])
-            seconds = int(time[-2::])
-            frame = framerate * ( seconds + 60 * minutes ) 
-
-            if version == 1:
-                if "card" in event: label = 0
-                elif "subs" in event: label = 1
-                elif "soccer" in event: label = 2
-                else: continue
-            elif version == 2:
-                if event not in self.dict_event:
-                    continue
-                label = self.dict_event[event]
-
-            # if label outside temporal of view
-            if half == 1 and frame//self.window_size_frame>=label_half1.shape[0]:
-                continue
-            if half == 2 and frame//self.window_size_frame>=label_half2.shape[0]:
-                continue
-
-            if half == 1:
-                label_half1[frame//self.window_size_frame][0] = 0 # not BG anymore
-                label_half1[frame//self.window_size_frame][label+1] = 1 # that's my class
-
-            if half == 2:
-                label_half2[frame//self.window_size_frame][0] = 0 # not BG anymore
-                label_half2[frame//self.window_size_frame][label+1] = 1 # that's my class
+        for annotation in labels_sts["annotations"]:
+        
+            snippet_id = annotation['id']
+            end_time = annotation["end"]
+            event_timestamp = annotation["timestep"]
+            frame = framerate * end_time 
+            
+            event_type = annotation['type']
+            label = dict_event_sts[event_type]
+        
+            game_labels[snippet_id,label] = 1 # that's my class
+                
+        if split == ['train']:
+            game_feats = game_feats[0:(total_snippets-300))]
+            game_labels = game_labels[0:(total_snippets-300)]
+            
+        if split == ['valid']:
+            game_feats = game_feats[(total_snippets-300):(total_snippets-200)]
+            game_labels = game_labels[(total_snippets-300):(total_snippets-200)]
+            
+        if split == ['test']:
+            game_feats = game_feats[(total_snippets-200):(total_snippets)]
+            game_labels = game_labels[(total_snippets-200):(total_snippets)]
+            
         
         self.game_feats.append(feat_game)
         #self.game_feats.append(feat_half2)
