@@ -15,7 +15,7 @@ import json
 
 from SoccerNet.Downloader import getListGames
 from SoccerNet.Downloader import SoccerNetDownloader
-from SoccerNet.Evaluation.utils import AverageMeter, EVENT_DICTIONARY_SPORTEC, INVERSE_EVENT_DICTIONARY_SPORTEC
+from SoccerNet.Evaluation.utils import AverageMeter#, EVENT_DICTIONARY_SPORTEC, INVERSE_EVENT_DICTIONARY_SPORTEC
 from SoccerNet.Evaluation.utils import EVENT_DICTIONARY_V1, INVERSE_EVENT_DICTIONARY_V1
 
 
@@ -48,13 +48,13 @@ class SoccerNetClipsSportec(Dataset):
         self.path = path
         #self.listGames = getListGames(split)
         self.features = features
-        self.window_size_frame = window_size*framerate
+        self.window_size_frame = int(window_size*framerate)
         self.version = version
         if version == 1:
             self.num_classes = 3
             self.labels="Labels.json"
         elif version == 2:
-            self.dict_event = EVENT_DICTIONARY_SPORTEC
+            #self.dict_event = EVENT_DICTIONARY_SPORTEC
             self.num_classes = 17
             self.labels="Labels-v2.json"
 
@@ -67,58 +67,48 @@ class SoccerNetClipsSportec(Dataset):
 
         self.game_feats = list()
         self.game_labels = list()
-        self.feat_name = 'features_snippets.npy'
-        self.label_name = 'SGE_FCA_annotations_snippets.json'
-        ###Transformation of json to labels happens here!!
-        # game_counter = 0
-        #for game in tqdm(self.listGames):
-            # Load features
-        feat_game = np.load(os.path.join(self.path, self.game_name))
-        #feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
-        #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
-        #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
+        
+        for game in split:
 
-        feat_game = feats2clip(torch.from_numpy(feat_game), stride=self.window_size_frame, clip_length=self.window_size_frame)
-        #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
+            ###Transformation of json to labels happens here!!
+            # game_counter = 0
+            #for game in tqdm(self.listGames):
+                # Load features
+            feats_game = np.load(os.path.join(self.path, 'features', f'{game}_snippets_features.npy'))
+            #feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
+            #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
+            #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
 
-        # Load labels
-        labels = json.load(open(os.path.join(self.path,self.label_name)))
-            
-        dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
-        
-        
-        total_snippets = len(labels['annotations'])
-        game_labels = np.zeros((total_snippets, num_classes))
+            feats_game = feats2clip(torch.from_numpy(feats_game), stride=self.window_size_frame, clip_length=self.window_size_frame)
+            #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
 
-        for annotation in labels_sts["annotations"]:
-        
-            snippet_id = annotation['id']
-            end_time = annotation["end"]
-            event_timestamp = annotation["timestep"]
-            frame = framerate * end_time 
-            
-            event_type = annotation['type']
-            label = dict_event_sts[event_type]
-        
-            game_labels[snippet_id,label] = 1 # that's my class
-                
-        if split == ['train']:
-            game_feats = game_feats[0:(total_snippets-300))]
-            game_labels = game_labels[0:(total_snippets-300)]
-            
-        if split == ['valid']:
-            game_feats = game_feats[(total_snippets-300):(total_snippets-200)]
-            game_labels = game_labels[(total_snippets-300):(total_snippets-200)]
-            
-        if split == ['test']:
-            game_feats = game_feats[(total_snippets-200):(total_snippets)]
-            game_labels = game_labels[(total_snippets-200):(total_snippets)]
-            
-        
-        self.game_feats.append(feat_game)
-        #self.game_feats.append(feat_half2)
-        self.game_labels.append(label_game)
-        #self.game_labels.append(label_half2)
+            # Load labels
+            labels = json.load(open(os.path.join(self.path, 'labels', f'{game}_labels.json')))
+
+            dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
+
+            num_classes = len(dict_event_sts)
+            labels_game = np.zeros((len(labels['annotations']), num_classes))
+
+
+            for annotation in labels["annotations"]:
+
+                snippet_id = annotation['id']
+                end_time = annotation["end"]
+                event_timestamp = annotation["timestep"]
+                #frame = framerate * ( seconds + 60 * minutes ) 
+
+                event_type = annotation['type']
+                label = dict_event_sts[event_type]
+
+                labels_game[snippet_id,label] = 1 # that's my class
+
+
+
+            self.game_feats.append(feats_game)
+            #self.game_feats.append(feat_half2)
+            self.game_labels.append(labels_game)
+            #self.game_labels.append(label_half2)
 
         self.game_feats = np.concatenate(self.game_feats)
         self.game_labels = np.concatenate(self.game_labels)

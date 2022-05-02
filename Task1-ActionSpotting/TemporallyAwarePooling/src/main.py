@@ -7,13 +7,28 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import torch
 
-from dataset import SoccerNetClips, SoccerNetClipsTesting, SoccerNetClipsSportec #,SoccerNetClipsOld
+from dataset import SoccerNetClipsSportec #,SoccerNetClipsOld, SoccerNetClips, SoccerNetClipsTesting
 from model import Model
 from train import trainer, test, testSpotting
 from loss import NLLLoss
 
+#games currently not used
+#game_list = [           
+#            "SF_02ST_TSG_FCU",
+#            "SF_02ST_BSC_WOB",
+#            "SF_02ST_BOC_M05",
+#            "SF_02ST_SGF_DSC",
+#            ]
+
 
 def main(args):
+    
+    
+    matches_train = ["SF_02ST_FCB_KOE",
+                  "SF_02ST_RBL_VFB",
+                  "SF_02ST_SGE_FCA"]
+    matches_val = ["SF_02ST_B04_BMG"]
+    matches_test = ["SF_02ST_SCF_BVB"]
 
     logging.info("Parameters:")
     for arg in vars(args):
@@ -21,10 +36,10 @@ def main(args):
 
     # create dataset
     if not args.test_only:
-        dataset_Train = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_train, version=args.version, framerate=args.framerate, window_size=args.window_size)
-        dataset_Valid = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
-        dataset_Valid_metric  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_valid, version=args.version, framerate=args.framerate, window_size=args.window_size)
-    dataset_Test  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=args.split_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Train = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_train, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Valid = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_val, version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Valid_metric  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_val, version=args.version, framerate=args.framerate, window_size=args.window_size)
+    dataset_Test  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
 
     if args.feature_dim is None:
         args.feature_dim = dataset_Test[0][1].shape[-1]
@@ -123,8 +138,8 @@ if __name__ == '__main__':
     parser.add_argument('--version', required=False, type=int,   default=2,     help='Version of the dataset' )
     parser.add_argument('--feature_dim', required=False, type=int,   default=None,     help='Number of input features' )
     parser.add_argument('--evaluation_frequency', required=False, type=int,   default=10,     help='Number of chunks per epoch' )
-    parser.add_argument('--framerate', required=False, type=int,   default=2,     help='Framerate of the input features' )
-    parser.add_argument('--window_size', required=False, type=int,   default=15,     help='Size of the chunk (in seconds)' )
+    parser.add_argument('--framerate', required=False, type=int,   default=10,     help='Framerate of the input features' )
+    parser.add_argument('--window_size', required=False, type=int,   default=2.5,     help='Size of the chunk (in seconds)' )
     parser.add_argument('--pool',       required=False, type=str,   default="NetVLAD++", help='How to pool' )
     parser.add_argument('--vocab_size',       required=False, type=int,   default=64, help='Size of the vocabulary for NetVLAD' )
     parser.add_argument('--NMS_window',       required=False, type=int,   default=30, help='NMS window in second' )
