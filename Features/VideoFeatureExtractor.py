@@ -173,9 +173,9 @@ if __name__ == "__main__":
                         help="FPS for the features [default:2.0]")
 
     # PCA reduction
-    parser.add_argument('--PCA', type=str, default="pca_512_TF2.pkl",
+    parser.add_argument('--PCA', type=str, default=None,
                         help="Pickle with pre-computed PCA")
-    parser.add_argument('--PCA_scaler', type=str, default="average_512_TF2.pkl",
+    parser.add_argument('--PCA_scaler', type=str, default=None,
                         help="Pickle with pre-computed PCA scaler")
                         
     args = parser.parse_args()

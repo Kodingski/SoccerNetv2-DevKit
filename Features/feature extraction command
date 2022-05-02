@@ -1,0 +1,1 @@
+python Features/VideoFeatureExtractor.py --path_video Data/matches/SF_02ST_B04_BMG_snippets.mp4 --path_features Data/features/SF_02ST_B04_BMG_features.npy --overwrite --FPS 10

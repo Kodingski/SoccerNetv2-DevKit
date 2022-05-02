@@ -142,3 +142,4 @@ Task1-ActionSpotting/CALF_Calibration_GCN/outputs/
 *.mp4
 *.mov
 *.mp3
+Data/
