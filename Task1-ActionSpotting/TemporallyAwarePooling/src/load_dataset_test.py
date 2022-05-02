@@ -63,27 +63,34 @@ num_classes = 4
 #%%
 feat_game = np.load('Data/features_snippets.npy')
 feat_game = feat_game.reshape(-1, feat_game.shape[-1])
-
-#%%load their features to compare
-feat_soccernet = np.load(r'england_epl\2014-2015\2015-02-21 - 18-00 Crystal Palace 1 - 2 Arsenal\1_ResNET_TF2.npy')
-
-window_size_soccernet = 15
-framerate_soccernet = 2
-window_size_frame_soccernet = window_size_soccernet*framerate_soccernet
-
-
-#%%
-feat_soccernet_head = feat_soccernet[0:100,:]
-#%%
-#feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
-#feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
-
 feat_game_sts = feats2clip(torch.from_numpy(feat_game), stride=window_size_frame, clip_length=window_size_frame)
-#feat_soccernet_torch = feats2clip(torch.from_numpy(feat_soccernet), stride=window_size_frame_soccernet, clip_length=window_size_frame_soccernet)
+
+#%%load sportec lables
+labels_sts = json.load(open(r'Data/SGE_FCA_annotations_snippets.json'))
+##next: Recreate their one hot encoding on sportec data
+dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
+
+num_classes = len(dict_event_sts)
+game_labels = np.zeros((len(labels_sts['annotations']), num_classes))
 
 
-#feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
+for annotation in labels_sts["annotations"]:
 
+    snippet_id = annotation['id']
+    end_time = annotation["end"]
+    event_timestamp = annotation["timestep"]
+    frame = framerate * end_time 
+    
+    event_type = annotation['type']
+    label = dict_event_sts[event_type]
+
+    game_labels[snippet_id,label] = 1 # that's my class
+
+
+total_snippets = len(labels_sts['annotations'])
+
+feat_game_sts = feat_game_sts[0:(total_snippets-300)]
+game_labels = game_labels[0:(total_snippets-300)]
 
 #%%
 # Load soccernet labels
@@ -143,28 +150,9 @@ game_labels.append(label_half2)
 
 game_labels = np.concatenate(game_labels)
 
-#%%load sportec lables
-labels_sts = json.load(open(r'Data/SGE_FCA_annotations_snippets.json'))
+#%%load their features to compare
+feat_soccernet = np.load(r'england_epl\2014-2015\2015-02-21 - 18-00 Crystal Palace 1 - 2 Arsenal\1_ResNET_TF2.npy')
 
-
-##next: Recreate their one hot encoding on sportec data
-dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
-
-num_classes = len(dict_event_sts)
-game_labels = np.zeros((len(labels_sts['annotations']), num_classes))
-
-
-for annotation in labels_sts["annotations"]:
-
-    snippet_id = annotation['id']
-    end_time = annotation["end"]
-    event_timestamp = annotation["timestep"]
-    frame = framerate * ( seconds + 60 * minutes ) 
-    
-    event_type = annotation['type']
-    label = dict_event_sts[event_type]
-
-    game_labels[snippet_id,label] = 1 # that's my class
-
-
-#%%do it with sportec labels
+window_size_soccernet = 15
+framerate_soccernet = 2
+window_size_frame_soccernet = window_size_soccernet*framerate_soccernet
