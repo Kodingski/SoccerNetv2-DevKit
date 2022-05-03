@@ -50,13 +50,9 @@ class SoccerNetClipsSportec(Dataset):
         self.features = features
         self.window_size_frame = int(window_size*framerate)
         self.version = version
-        if version == 1:
-            self.num_classes = 3
-            self.labels="Labels.json"
-        elif version == 2:
-            #self.dict_event = EVENT_DICTIONARY_SPORTEC
-            self.num_classes = 17
-            self.labels="Labels-v2.json"
+        self.num_classes = 3
+        #self.labels="Labels.json"
+
 
         #logging.info("Checking/Download features and labels locally")
         #downloader = SoccerNetDownloader(path)
@@ -74,7 +70,8 @@ class SoccerNetClipsSportec(Dataset):
             # game_counter = 0
             #for game in tqdm(self.listGames):
                 # Load features
-            feats_game = np.load(os.path.join(self.path, 'features', f'{game}_snippets_features.npy'))
+            feats_game = np.load(os.path.join(self.path, 'features', f'{game}_{self.features}'))
+            print(len(feats_game))
             #feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
             #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
             #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
@@ -87,8 +84,8 @@ class SoccerNetClipsSportec(Dataset):
 
             dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
 
-            num_classes = len(dict_event_sts)
-            labels_game = np.zeros((len(labels['annotations']), num_classes))
+            #num_classes = len(dict_event_sts)
+            labels_game = np.zeros((len(labels['annotations']), self.num_classes+1))
 
 
             for annotation in labels["annotations"]:

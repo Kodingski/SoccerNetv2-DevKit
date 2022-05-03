@@ -26,7 +26,11 @@ def main(args):
     
     matches_train = ["SF_02ST_FCB_KOE",
                   "SF_02ST_RBL_VFB",
-                  "SF_02ST_SGE_FCA"]
+                  "SF_02ST_SGE_FCA",
+                  "SF_02ST_TSG_FCU",
+                  "SF_02ST_BSC_WOB",
+                  "SF_02ST_BOC_M05"]
+                  #"SF_02ST_SGF_DSC",]
     matches_val = ["SF_02ST_B04_BMG"]
     matches_test = ["SF_02ST_SCF_BVB"]
 
@@ -72,7 +76,11 @@ def main(args):
 
     # training parameters
     if not args.test_only:
-        criterion = NLLLoss()
+        
+        #define class weights for NLLLoss:
+        
+        
+        criterion = torch.nn.NLLLoss(weight= torch.tensor([(1/25),(1/60),(1/10),(1/5)], device = torch.device('cuda:0')))
         optimizer = torch.optim.Adam(model.parameters(), lr=args.LR, 
                                     betas=(0.9, 0.999), eps=1e-08, 
                                     weight_decay=0, amsgrad=False)
@@ -92,30 +100,30 @@ def main(args):
 
     # test on multiple splits [test/challenge]
     for split in args.split_test:
-        dataset_Test  = SoccerNetClipsTesting(path=args.SoccerNet_path, features=args.features, split=[split], version=args.version, framerate=args.framerate, window_size=args.window_size)
+        dataset_Test  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
 
         test_loader = torch.utils.data.DataLoader(dataset_Test,
             batch_size=1, shuffle=False,
             num_workers=1, pin_memory=True)
 
-        results = testSpotting(test_loader, model=model, model_name=args.model_name, NMS_window=args.NMS_window, NMS_threshold=args.NMS_threshold)
+        results = test(test_loader, model=model, model_name=args.model_name)#, NMS_window=args.NMS_window, NMS_threshold=args.NMS_threshold)
         if results is None:
-            continue
+                continue
 
-        a_mAP = results["a_mAP"]
-        a_mAP_per_class = results["a_mAP_per_class"]
-        a_mAP_visible = results["a_mAP_visible"]
-        a_mAP_per_class_visible = results["a_mAP_per_class_visible"]
-        a_mAP_unshown = results["a_mAP_unshown"]
-        a_mAP_per_class_unshown = results["a_mAP_per_class_unshown"]
+    #a_mAP = results["a_mAP"]
+    #a_mAP_per_class = results["a_mAP_per_class"]
+    #a_mAP_visible = results["a_mAP_visible"]
+    #a_mAP_per_class_visible = results["a_mAP_per_class_visible"]
+    #a_mAP_unshown = results["a_mAP_unshown"]
+    #a_mAP_per_class_unshown = results["a_mAP_per_class_unshown"]
 
-        logging.info("Best Performance at end of training ")
-        logging.info("a_mAP visibility all: " +  str(a_mAP))
-        logging.info("a_mAP visibility all per class: " +  str( a_mAP_per_class))
-        logging.info("a_mAP visibility visible: " +  str( a_mAP_visible))
-        logging.info("a_mAP visibility visible per class: " +  str( a_mAP_per_class_visible))
-        logging.info("a_mAP visibility unshown: " +  str( a_mAP_unshown))
-        logging.info("a_mAP visibility unshown per class: " +  str( a_mAP_per_class_unshown))
+    #logging.info("Best Performance at end of training ")
+    #logging.info("a_mAP visibility all: " +  str(a_mAP))
+    #logging.info("a_mAP visibility all per class: " +  str( a_mAP_per_class))
+    #logging.info("a_mAP visibility visible: " +  str( a_mAP_visible))
+    #logging.info("a_mAP visibility visible per class: " +  str( a_mAP_per_class_visible))
+    #logging.info("a_mAP visibility unshown: " +  str( a_mAP_unshown))
+    #logging.info("a_mAP visibility unshown per class: " +  str( a_mAP_per_class_unshown))
 
     return 
 
@@ -125,7 +133,7 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='context aware loss function', formatter_class=ArgumentDefaultsHelpFormatter)
     
     parser.add_argument('--SoccerNet_path',   required=False, type=str,   default="/path/to/SoccerNet/",     help='Path for SoccerNet' )
-    parser.add_argument('--features',   required=False, type=str,   default="ResNET_TF2.npy",     help='Video features' )
+    parser.add_argument('--features',   required=False, type=str,   default="snippets_features.npy",     help='Video features' )
     parser.add_argument('--max_epochs',   required=False, type=int,   default=1000,     help='Maximum number of epochs' )
     parser.add_argument('--load_weights',   required=False, type=str,   default=None,     help='weights to load' )
     parser.add_argument('--model_name',   required=False, type=str,   default="NetVLAD++",     help='named of the model to save' )
@@ -133,15 +141,15 @@ if __name__ == '__main__':
 
     parser.add_argument('--split_train', nargs='+', default=["train"], help='list of split for training')
     parser.add_argument('--split_valid', nargs='+', default=["valid"], help='list of split for validation')
-    parser.add_argument('--split_test', nargs='+', default=["test", "challenge"], help='list of split for testing')
+    parser.add_argument('--split_test', nargs='+', default=["test"], help='list of split for testing')
 
     parser.add_argument('--version', required=False, type=int,   default=2,     help='Version of the dataset' )
-    parser.add_argument('--feature_dim', required=False, type=int,   default=None,     help='Number of input features' )
+    parser.add_argument('--feature_dim', required=False, type=int,   default=2048,     help='Number of input features' )
     parser.add_argument('--evaluation_frequency', required=False, type=int,   default=10,     help='Number of chunks per epoch' )
     parser.add_argument('--framerate', required=False, type=int,   default=10,     help='Framerate of the input features' )
     parser.add_argument('--window_size', required=False, type=int,   default=2.5,     help='Size of the chunk (in seconds)' )
     parser.add_argument('--pool',       required=False, type=str,   default="NetVLAD++", help='How to pool' )
-    parser.add_argument('--vocab_size',       required=False, type=int,   default=64, help='Size of the vocabulary for NetVLAD' )
+    parser.add_argument('--vocab_size',       required=False, type=int,   default=128, help='Size of the vocabulary for NetVLAD' )
     parser.add_argument('--NMS_window',       required=False, type=int,   default=30, help='NMS window in second' )
     parser.add_argument('--NMS_threshold',       required=False, type=float,   default=0.0, help='NMS threshold for positive results' )
 
@@ -152,7 +160,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--GPU',        required=False, type=int,   default=-1,     help='ID of the GPU to use' )
     parser.add_argument('--max_num_worker',   required=False, type=int,   default=4, help='number of worker to load data')
-    parser.add_argument('--seed',   required=False, type=int,   default=0, help='seed for reproducibility')
+    parser.add_argument('--seed',   required=False, type=int,   default=100, help='seed for reproducibility')
 
     # parser.add_argument('--logging_dir',       required=False, type=str,   default="log", help='Where to log' )
     parser.add_argument('--loglevel',   required=False, type=str,   default='INFO', help='logging level')

@@ -15,7 +15,7 @@ from netvlad import NetVLAD, NetRVLAD
 
 
 class Model(nn.Module):
-    def __init__(self, weights=None, input_size=512, num_classes=3, vocab_size=64, window_size=2.5, framerate=2, pool="NetVLAD"):
+    def __init__(self, weights=None, input_size=2048, num_classes=3, vocab_size=64, window_size=2.5, framerate=10, pool="NetVLAD"):
         """
         INPUT: a Tensor of shape (batch_size,window_size,feature_size)
         OUTPUTS: a Tensor of shape (batch_size,num_classes+1)
@@ -23,7 +23,7 @@ class Model(nn.Module):
 
         super(Model, self).__init__()
 
-        self.window_size_frame=window_size * framerate
+        self.window_size_frame=int(window_size * framerate)
         self.input_size = input_size
         self.num_classes = num_classes
         self.framerate = framerate
@@ -83,7 +83,7 @@ class Model(nn.Module):
             self.fc = nn.Linear(input_size*self.vlad_k, self.num_classes+1)
 
         self.drop = nn.Dropout(p=0.4)
-        self.sigm = nn.Sigmoid()
+        self.softmax = nn.LogSoftmax(dim=1)
 
         self.load_weights(weights=weights)
 
@@ -129,8 +129,10 @@ class Model(nn.Module):
 
 
         # Extra FC layer with dropout and sigmoid activation
-        output = self.sigm(self.fc(self.drop(inputs_pooled)))
-
+        output = self.softmax(self.fc(self.drop(inputs_pooled)))
+        #output = torch.tensor(output, dtype=torch.long, device=torch.device('cuda:0'))
+        #print(output.shape)
+        
         return output
 
 
@@ -139,8 +141,8 @@ if __name__ == "__main__":
     BS =256
     #adjust to our data
     T = 2.5
-    framerate= 2
-    D = 512
+    framerate= 10
+    D = 2048
     pool = "NetRVLAD++"
     model = Model(pool=pool, input_size=D, framerate=framerate, window_size=T)
     print(model)

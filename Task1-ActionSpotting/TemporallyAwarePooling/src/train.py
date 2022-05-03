@@ -8,6 +8,8 @@ from tqdm import tqdm
 import torch
 import numpy as np
 
+
+from datetime import datetime
 import sklearn
 import sklearn.metrics
 from sklearn.metrics import average_precision_score
@@ -114,7 +116,7 @@ def train(dataloader,
             output = model(feats)
 
             # hand written NLL criterion
-            loss = criterion(labels, output)
+            loss = criterion(output, torch.max(labels, 1)[1])
 
             # measure accuracy and record loss
             losses.update(loss.item(), feats.size(0))
@@ -165,7 +167,8 @@ def test(dataloader, model, model_name):
 
             # compute output
             output = model(feats)
-
+            #print(output)
+            
             all_labels.append(labels.detach().numpy())
             all_outputs.append(output.cpu().detach().numpy())
 
@@ -178,7 +181,17 @@ def test(dataloader, model, model_name):
             desc += f'Data:{data_time.avg:.3f}s '
             desc += f'(it:{data_time.val:.3f}s) '
             t.set_description(desc)
+            
+    labels_conc = np.concatenate(all_labels)
+    outputs_conc = np.concatenate(all_outputs)
 
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    np.savetxt(f"preds/labels_{now}.csv", labels_conc, delimiter=",")
+    np.savetxt(f"preds/outputs_{now}.csv", outputs_conc, delimiter=",")
+    
+    
+    
     AP = []
     for i in range(1, dataloader.dataset.num_classes+1):
         AP.append(average_precision_score(np.concatenate(all_labels)
