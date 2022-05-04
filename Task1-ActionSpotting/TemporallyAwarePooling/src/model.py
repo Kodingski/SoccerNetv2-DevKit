@@ -29,12 +29,13 @@ class Model(nn.Module):
         self.framerate = framerate
         self.pool = pool
         self.vlad_k = vocab_size
+        self.layer_size = 128
         
         # are feature alread PCA'ed?
-        if not self.input_size == 512:   
-            self.feature_extractor = nn.Linear(self.input_size, 512)
-            input_size = 512
-            self.input_size = 512
+        if not self.input_size == self.layer_size:   
+            self.feature_extractor = nn.Linear(self.input_size, self.layer_size)
+            input_size = self.layer_size
+            self.input_size = self.layer_size
 
         if self.pool == "MAX":
             self.pool_layer = nn.MaxPool1d(self.window_size_frame, stride=1)
@@ -82,7 +83,7 @@ class Model(nn.Module):
                                             add_batch_norm=True)
             self.fc = nn.Linear(input_size*self.vlad_k, self.num_classes+1)
 
-        self.drop = nn.Dropout(p=0.4)
+        self.drop = nn.Dropout(p=0.6)
         self.softmax = nn.LogSoftmax(dim=1)
 
         self.load_weights(weights=weights)
@@ -100,7 +101,7 @@ class Model(nn.Module):
 
 
         BS, FR, IC = inputs.shape
-        if not IC == 512:
+        if not IC == self.layer_size:
             inputs = inputs.reshape(BS*FR, IC)
             inputs = self.feature_extractor(inputs)
             inputs = inputs.reshape(BS, FR, -1)
@@ -138,7 +139,7 @@ class Model(nn.Module):
 
 if __name__ == "__main__":
     
-    BS =256
+    BS =32
     #adjust to our data
     T = 2.5
     framerate= 10

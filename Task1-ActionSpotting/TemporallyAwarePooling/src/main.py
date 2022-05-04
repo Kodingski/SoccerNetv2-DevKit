@@ -24,15 +24,16 @@ from loss import NLLLoss
 def main(args):
     
     
-    matches_train = ["SF_02ST_FCB_KOE",
+    matches_train = [
                   "SF_02ST_RBL_VFB",
                   "SF_02ST_SGE_FCA",
+                  'SF_02ST_SCF_BVB',  
                   "SF_02ST_TSG_FCU",
                   "SF_02ST_BSC_WOB",
-                  "SF_02ST_BOC_M05"]
-                  #"SF_02ST_SGF_DSC",]
+                  "SF_02ST_BOC_M05",
+                  "SF_02ST_SGF_DSC",]
     matches_val = ["SF_02ST_B04_BMG"]
-    matches_test = ["SF_02ST_SCF_BVB"]
+    matches_test = ["SF_02ST_FCB_KOE"]
 
     logging.info("Parameters:")
     for arg in vars(args):
@@ -66,11 +67,11 @@ def main(args):
             num_workers=args.max_num_worker, pin_memory=True)
 
         val_loader = torch.utils.data.DataLoader(dataset_Valid,
-            batch_size=args.batch_size, shuffle=False,
+            batch_size=args.batch_size, shuffle=True,
             num_workers=args.max_num_worker, pin_memory=True)
 
         val_metric_loader = torch.utils.data.DataLoader(dataset_Valid_metric,
-            batch_size=args.batch_size, shuffle=False,
+            batch_size=args.batch_size, shuffle=True,
             num_workers=args.max_num_worker, pin_memory=True)
 
 
@@ -80,7 +81,9 @@ def main(args):
         #define class weights for NLLLoss:
         
         
-        criterion = torch.nn.NLLLoss(weight= torch.tensor([(1/25),(1/60),(1/10),(1/5)], device = torch.device('cuda:0')))
+        
+        
+        criterion = torch.nn.NLLLoss(weight= torch.tensor([(4177/1910),(4177/4177),(4177/749),(4177/220)], device = torch.device('cuda:0')))
         optimizer = torch.optim.Adam(model.parameters(), lr=args.LR, 
                                     betas=(0.9, 0.999), eps=1e-08, 
                                     weight_decay=0, amsgrad=False)
@@ -103,7 +106,7 @@ def main(args):
         dataset_Test  = SoccerNetClipsSportec(path=args.SoccerNet_path, features=args.features, split=matches_test, version=args.version, framerate=args.framerate, window_size=args.window_size)
 
         test_loader = torch.utils.data.DataLoader(dataset_Test,
-            batch_size=1, shuffle=False,
+            batch_size=1, shuffle=True,
             num_workers=1, pin_memory=True)
 
         results = test(test_loader, model=model, model_name=args.model_name)#, NMS_window=args.NMS_window, NMS_threshold=args.NMS_threshold)
@@ -149,12 +152,12 @@ if __name__ == '__main__':
     parser.add_argument('--framerate', required=False, type=int,   default=10,     help='Framerate of the input features' )
     parser.add_argument('--window_size', required=False, type=int,   default=2.5,     help='Size of the chunk (in seconds)' )
     parser.add_argument('--pool',       required=False, type=str,   default="NetVLAD++", help='How to pool' )
-    parser.add_argument('--vocab_size',       required=False, type=int,   default=128, help='Size of the vocabulary for NetVLAD' )
+    parser.add_argument('--vocab_size',       required=False, type=int,   default=32, help='Size of the vocabulary for NetVLAD' )
     parser.add_argument('--NMS_window',       required=False, type=int,   default=30, help='NMS window in second' )
     parser.add_argument('--NMS_threshold',       required=False, type=float,   default=0.0, help='NMS threshold for positive results' )
 
-    parser.add_argument('--batch_size', required=False, type=int,   default=256,     help='Batch size' )
-    parser.add_argument('--LR',       required=False, type=float,   default=1e-03, help='Learning Rate' )
+    parser.add_argument('--batch_size', required=False, type=int,   default=16,     help='Batch size' )
+    parser.add_argument('--LR',       required=False, type=float,   default=1e-05, help='Learning Rate' )
     parser.add_argument('--LRe',       required=False, type=float,   default=1e-06, help='Learning Rate end' )
     parser.add_argument('--patience', required=False, type=int,   default=10,     help='Patience before reducing LR (ReduceLROnPlateau)' )
 

@@ -72,6 +72,16 @@ def trainer(train_loader,
             logging.info("Validation performance at epoch " +
                          str(epoch+1) + " -> " + str(performance_validation))
 
+            performance_training = test(
+                train_loader,
+                model,
+                model_name
+            )
+            
+            logging.info("Training performance at epoch " +
+                         str(epoch+1) + " -> " + str(performance_training))            
+            
+            
         # Reduce LR on Plateau after patience reached
         prevLR = optimizer.param_groups[0]['lr']
         scheduler.step(loss_validation)
