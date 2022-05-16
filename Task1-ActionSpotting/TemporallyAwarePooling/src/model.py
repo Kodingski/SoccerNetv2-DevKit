@@ -15,7 +15,7 @@ from netvlad import NetVLAD, NetRVLAD
 
 
 class Model(nn.Module):
-    def __init__(self, weights=None, input_size=2048, num_classes=3, vocab_size=64, window_size=2.5, framerate=10, pool="NetVLAD"):
+    def __init__(self, weights=None, input_size=2048, num_classes=3, vocab_size=64, window_size=2.5, framerate=10, pool="NetVLAD", dropout=0.8):
         """
         INPUT: a Tensor of shape (batch_size,window_size,feature_size)
         OUTPUTS: a Tensor of shape (batch_size,num_classes+1)
@@ -29,7 +29,7 @@ class Model(nn.Module):
         self.framerate = framerate
         self.pool = pool
         self.vlad_k = vocab_size
-        self.layer_size = 128
+        self.layer_size = 32
         
         # are feature alread PCA'ed?
         if not self.input_size == self.layer_size:   
@@ -83,7 +83,7 @@ class Model(nn.Module):
                                             add_batch_norm=True)
             self.fc = nn.Linear(input_size*self.vlad_k, self.num_classes+1)
 
-        self.drop = nn.Dropout(p=0.6)
+        self.drop = nn.Dropout(p=dropout)
         self.softmax = nn.LogSoftmax(dim=1)
 
         self.load_weights(weights=weights)
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     BS =32
     #adjust to our data
     T = 2.5
-    framerate= 10
+    framerate= 12,4
     D = 2048
     pool = "NetRVLAD++"
     model = Model(pool=pool, input_size=D, framerate=framerate, window_size=T)

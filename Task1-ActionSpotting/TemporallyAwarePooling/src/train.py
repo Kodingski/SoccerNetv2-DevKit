@@ -45,6 +45,9 @@ def trainer(train_loader,
         # evaluate on validation set
         loss_validation = train(
             val_loader, model, criterion, optimizer, epoch + 1, train=False)
+        
+        logging.info(f'Training Loss at Epoch {epoch}: {loss_training}')
+        logging.info(f'Validation Loss at Epoch {epoch}: {loss_validation}')
 
         state = {
             'epoch': epoch + 1,
@@ -67,7 +70,9 @@ def trainer(train_loader,
             performance_validation = test(
                 val_metric_loader,
                 model,
-                model_name)
+                model_name,
+                'validation'
+            )
 
             logging.info("Validation performance at epoch " +
                          str(epoch+1) + " -> " + str(performance_validation))
@@ -75,7 +80,8 @@ def trainer(train_loader,
             performance_training = test(
                 train_loader,
                 model,
-                model_name
+                model_name,
+                'training'
             )
             
             logging.info("Training performance at epoch " +
@@ -117,6 +123,8 @@ def train(dataloader,
 
     end = time.time()
     with tqdm(enumerate(dataloader), total=len(dataloader)) as t:
+        print(t)
+        print(len(t))
         for i, (feats, labels) in t:
             # measure data loading time
             data_time.update(time.time() - end)
@@ -155,7 +163,7 @@ def train(dataloader,
     return losses.avg
 
 
-def test(dataloader, model, model_name):
+def test(dataloader, model, model_name, set_type):
     batch_time = AverageMeter()
     data_time = AverageMeter()
 
@@ -210,6 +218,7 @@ def test(dataloader, model, model_name):
     # t.set_description()
     # print(AP)
     mAP = np.mean(AP)
+    logging.info(f"mAP of model on {set_type} data: {mAP}") 
     print(mAP, AP)
 
     return mAP

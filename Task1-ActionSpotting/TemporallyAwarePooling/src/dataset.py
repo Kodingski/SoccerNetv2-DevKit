@@ -34,7 +34,7 @@ def feats2clip(feats, stride, clip_length, padding = "replicate_last", off=0):
     for i in torch.arange(-off, clip_length-off):
         idxs.append(idx+i)
     idx = torch.stack(idxs, dim=1)
-
+    #print(idx)
     if padding=="replicate_last":
         idx = idx.clamp(0, feats.shape[0]-1)
     # print(idx)
@@ -44,7 +44,7 @@ def feats2clip(feats, stride, clip_length, padding = "replicate_last", off=0):
 
 class SoccerNetClipsSportec(Dataset):
     def __init__(self, path, features="ResNET_PCA512.npy", split=["train"], version=2, 
-                framerate=2, window_size=15):
+                framerate=12.4, window_size=2.5, labels=None):
         self.path = path
         #self.listGames = getListGames(split)
         self.features = features
@@ -52,7 +52,6 @@ class SoccerNetClipsSportec(Dataset):
         self.version = version
         self.num_classes = 3
         #self.labels="Labels.json"
-
 
         #logging.info("Checking/Download features and labels locally")
         #downloader = SoccerNetDownloader(path)
@@ -64,48 +63,43 @@ class SoccerNetClipsSportec(Dataset):
         self.game_feats = list()
         self.game_labels = list()
         
-        for game in split:
-
+        for clip_nr, clip in enumerate(split):
+            
+            if clip_nr % 100 == 0:
+                print(clip_nr)
             ###Transformation of json to labels happens here!!
             # game_counter = 0
             #for game in tqdm(self.listGames):
                 # Load features
-            feats_game = np.load(os.path.join(self.path, 'features', f'{game}_{self.features}'))
-            print(len(feats_game))
+
             #feat_game = feat_half1.reshape(-1, feat_half1.shape[-1])
             #feat_half2 = np.load(os.path.join(self.path, game, "2_" + self.features))
             #feat_half2 = feat_half2.reshape(-1, feat_half2.shape[-1])
 
-            feats_game = feats2clip(torch.from_numpy(feats_game), stride=self.window_size_frame, clip_length=self.window_size_frame)
+            
             #feat_half2 = feats2clip(torch.from_numpy(feat_half2), stride=self.window_size_frame, clip_length=self.window_size_frame)
 
             # Load labels
-            labels = json.load(open(os.path.join(self.path, 'labels', f'{game}_labels.json')))
-
-            dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
+            clip_game = clip[0:15]
+            clip_id = int(clip[16:])
+            
+            
+      
+            #dict_event_sts = {'None':0, 'Play':1, 'TacklingGame':2, 'Throw-in':3}
 
             #num_classes = len(dict_event_sts)
-            labels_game = np.zeros((len(labels['annotations']), self.num_classes+1))
+            labels_clip = np.array(labels[clip_game][clip_id-1]).reshape((1,4))
 
+            
+            for i in range(2):
+                for ii in range(2):
+                    
+                    feats_clip = np.load(os.path.join(self.path, 'augmented_features', f'{clip_game}_{clip_id}.mp4_{i}_{ii}.npy'))
+                    feats_clip = feats2clip(torch.from_numpy(feats_clip), stride=self.window_size_frame, clip_length=self.window_size_frame)
+                    
+                    self.game_feats.append(feats_clip)
+                    self.game_labels.append(labels_clip)
 
-            for annotation in labels["annotations"]:
-
-                snippet_id = annotation['id']
-                end_time = annotation["end"]
-                event_timestamp = annotation["timestep"]
-                #frame = framerate * ( seconds + 60 * minutes ) 
-
-                event_type = annotation['type']
-                label = dict_event_sts[event_type]
-
-                labels_game[snippet_id,label] = 1 # that's my class
-
-
-
-            self.game_feats.append(feats_game)
-            #self.game_feats.append(feat_half2)
-            self.game_labels.append(labels_game)
-            #self.game_labels.append(label_half2)
 
         self.game_feats = np.concatenate(self.game_feats)
         self.game_labels = np.concatenate(self.game_labels)
